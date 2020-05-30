@@ -170,6 +170,15 @@ std::pair<Token, std::string> Lexer::lex() {
 	case '\t':
 		return lex();
 
+	case '#':
+	{
+		auto tmp = get_char();
+		while (tmp != '\n' && tmp != eof)
+			tmp = get_char();
+		unget_char(tmp);
+		return lex();
+	}
+
 	}
 
 	LEX_RETURN(_ERROR, std::string(1, character));
