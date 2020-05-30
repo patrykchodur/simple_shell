@@ -11,11 +11,11 @@ Lexer::Lexer(bool interactive) {
 }
 
 int Lexer::get_char() {
-	return std::cin.get();
+	return m_stream->get();
 }
 
 void Lexer::unget_char(int c) {
-	std::cin.unget();
+	m_stream->unget();
 }
 
 bool Lexer::is_identifier_char(int c) {
@@ -147,7 +147,8 @@ std::pair<Token, std::string> Lexer::lex() {
 			LEX_RETURN(_APPEND_REDIRECTION, ">>");
 		unget_char(tmp);
 		m_was_redirection = true;
-		LEX_RETURN(_OUT_REDIRECTION, ">");
+		m_was_escaped = false;
+		return { _OUT_REDIRECTION, ">" };
 	}
 	
 	case '<':
@@ -172,4 +173,8 @@ std::pair<Token, std::string> Lexer::lex() {
 	}
 
 	LEX_RETURN(_ERROR, std::string(1, character));
+}
+
+void Lexer::set_stream(std::istream* stream) {
+	m_stream = stream;
 }

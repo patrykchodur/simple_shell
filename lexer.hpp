@@ -26,6 +26,7 @@ class Lexer {
 public:
 	Lexer(bool interactive);
 	std::pair<Token, std::string> lex();
+	void set_stream(std::istream* stream);
 	operator bool();
 private:
 	int get_char();
@@ -34,6 +35,7 @@ private:
 	bool m_was_escaped;
 	bool m_was_redirection;
 	bool m_interactive;
+	std::istream* m_stream;
 };
 
 #endif

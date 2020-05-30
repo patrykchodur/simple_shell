@@ -11,6 +11,8 @@
 #include <pwd.h>
 #include <uuid/uuid.h>
 
+#include <fcntl.h>
+
 int max_fork_count = 100;
 
 const char* built_in_names[] = {
@@ -27,7 +29,28 @@ int (*built_in_functions[])(const char(*)[]) = {
 
 static int child_pipe[2];
 
-int execute(const char* path, char* argv[]) {
+static void set_redirections(Fdsimple* fd, Nfsimple* nf) {
+	int fd_count = *(int*)fd;
+	int nf_count = *(int*)nf;
+
+
+	for (int iter = 0; iter < fd_count; ++iter) {
+		dup2(fd[iter + 1].to, fd[iter + 1].from);
+		fprintf(stderr, "from: %d to: %d", fd[iter + 1].from, fd[iter + 1].to);
+	}
+
+	for (int iter = 0; iter < nf_count; ++iter) {
+		int result = 0;
+		if (nf[iter + 1].append)
+			result = open(nf[iter + 1].to, O_WRONLY | O_APPEND | O_CREAT);
+		else
+			result = open(nf[iter + 1].to, O_RDWR | O_CREAT);
+		dup2(result, nf[iter + 1].from );
+		// fprintf(stderr, "from: %d result: %d, file: %s\n, append: %d", nf[iter + 1].from, result, nf[iter + 1].to, nf[iter + 1].append);
+	}
+}
+
+int execute(const char* path, char* argv[], Fdsimple* fd, Nfsimple* nf) {
 	assert(--max_fork_count > 0);
 
 	for (int iter = 0; iter < sizeof(built_in_names) / sizeof(built_in_names[0]); ++iter) {
@@ -41,6 +64,7 @@ int execute(const char* path, char* argv[]) {
 	}
 	int pid = fork();
 	if (pid == 0) {
+		set_redirections(fd, nf);
 		if (child_pipe[0]) {
 			dup2(child_pipe[0], 0);
 		}
@@ -82,6 +106,10 @@ int wait_for_process(int pid) {
 
 void open_pipe(int arg[2]) {
 	pipe(arg);
+}
+
+void close_fd(int fd) {
+	close(fd);
 }
 
 static char* wd_path;

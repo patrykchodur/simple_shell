@@ -34,7 +34,7 @@
 
 class Parser {
 public:
-	Parser(bool interactive);
+	Parser(int argc, const char* const argv[]);
 	void main_loop();
 
 private:
@@ -45,6 +45,7 @@ private:
 	size_t m_token_stack_position;
 	int m_last_return_value;
 	std::vector<Program> m_programs_to_run;
+	std::unique_ptr<std::istream> m_stream;
 
 	bool m_error;
 
@@ -64,7 +65,7 @@ private:
 	void pipeline();
 	void pipeline_separator();
 	void command();
-	void redirection();
+	void redirection(Program& pr);
 
 	void skip_to_separator();
 	int last_return_value();

@@ -8,20 +8,16 @@
 
 #include <cstring>
 
+#include "simple_structs.h"
+
 struct Fdredirection {
-	Fdredirection() {
-		from = 0;
-		to = 0;
-	}
+	Fdredirection(int from = 0, int to = 0) : from(from), to(to) { }
 	int from;
 	int to;
 };
 
 struct Nfredirection {
-	Nfredirection() {
-		from = 0;
-		append = false;
-	}
+	Nfredirection(int from = 0, std::string to = std::string(), bool append = false) : from(from), to(to), append(append) { }
 	int from;
 	std::string to;
 	bool append;
@@ -64,6 +60,28 @@ struct Program {
 		args[arg_count] = nullptr;
 
 		return std::unique_ptr<char*, decltype(deleter)>(args, deleter);
+	}
+
+	auto get_fd_redirections() {
+		auto result = new Fdsimple[m_fd.size() + 1];
+		*reinterpret_cast<int*>(result) = m_fd.size();
+		for (int iter = 0; iter < m_fd.size(); ++iter) {
+			result[iter + 1].from = m_fd[iter].from;
+			result[iter + 1].to = m_fd[iter].to;
+		}
+		return std::unique_ptr<Fdsimple>(result);
+	}
+
+	auto get_nf_redirections() {
+		auto result = new Nfsimple[m_nf.size() + 1];
+		*reinterpret_cast<int*>(result) = m_nf.size();
+		for (int iter = 0; iter < m_nf.size(); ++iter) {
+			result[iter + 1].from = m_nf[iter].from;
+			result[iter + 1].to = m_nf[iter].to.c_str();
+			result[iter + 1].append = m_nf[iter].append;
+		}
+		return std::unique_ptr<Nfsimple>(result);
+
 	}
 };
 

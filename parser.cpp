@@ -1,14 +1,24 @@
 #include "parser.hpp"
 #include "low_level.h"
 #include <iostream>
+#include <fstream>
 
-Parser::Parser(bool interactive) :
-		m_lex(interactive),
-		m_interactive(interactive) {
+Parser::Parser(int argc, const char* const argv[]) :
+		m_lex(argc == 1),
+		m_interactive(argc == 1) {
 	m_token_stack_position = -1;
 	m_finish = false;
 	m_last_return_value = 0;
 	m_error = false;
+
+	// preparing stream
+	if (m_interactive)
+		m_lex.set_stream(&std::cin);
+	else {
+		m_stream = std::make_unique<std::ifstream>(argv[1]);
+		m_lex.set_stream(m_stream.get());
+	}
+
 
 }
 
@@ -151,13 +161,52 @@ void Parser::command() {
 			}
 			continue;
 		}
-		redirection();
+		redirection(result);
 	}
-	m_programs_to_run.push_back(result);
+	if (!result.m_name.empty())
+		m_programs_to_run.push_back(result);
 }
 
-void Parser::redirection() {
-	assert(0);
+void Parser::redirection(Program& pr) {
+	int fildes = -1;
+	std::string name;
+	bool append = false;
+
+	if (accept(_FILDES))
+		fildes = std::stoi(current_text());
+	else if (accept(_ARGUMENT)) {
+		name = current_text();
+		assert(0); // not supported yet
+	}
+
+
+	if (accept(_OUT_REDIRECTION)) {
+		if (fildes == -1)
+			fildes = 1;
+	}
+	else if (accept(_IN_REDIRECTION)) {
+		if (fildes == -1)
+			fildes = 0;
+	}
+	else if (accept(_APPEND_REDIRECTION)) {
+		if (fildes == -1)
+			fildes = 1;
+		append = true;
+	}
+
+
+	if (accept(_ARGUMENT)) {
+		pr.m_nf.emplace_back(
+				fildes, 
+				current_text(), 
+				append);
+	}
+
+	else if (accept(_FILDES)) {
+		pr.m_fd.emplace_back(
+				fildes, 
+				std::stoi(current_text()));
+	}
 }
 
 void Parser::main_loop() {
@@ -191,6 +240,8 @@ void Parser::print_prompt() {
 }
 
 void Parser::execute_to_run() {
+	if (m_programs_to_run.empty())
+		return;
 	if (m_error) {
 		m_programs_to_run.clear();
 		return;
@@ -207,7 +258,15 @@ void Parser::execute_to_run() {
 			pipe_for_child[1] = 0;
 		}
 		set_pipe_for_child(pipe_for_child);
-		iter.m_pid = execute(iter.m_name.c_str(), args.get());
+
+		auto fd_redirections = iter.get_fd_redirections();
+		auto nf_redirections = iter.get_nf_redirections();
+
+		iter.m_pid = execute(
+				iter.m_name.c_str(),
+				args.get(),
+				fd_redirections.get(),
+				nf_redirections.get());
 
 		if (iter.m_pipe) {
 			pipe_for_child[0] = pipes[0];
