@@ -13,6 +13,9 @@ const char* get_wd(void);
 const char* get_hd(void);
 const char* get_login(void);
 
+const char* get_env(const char* name);
+int set_env(const char* name, const char* value);
+
 
 #ifdef __cplusplus
 }

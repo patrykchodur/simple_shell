@@ -8,6 +8,7 @@ enum Token {
 	_ERROR = -1,
 	_EOF = 0,
 	_ARGUMENT, // ./cmd, -t, test, 'test 2'
+	_VARIABLE,
 	_PIPE, // |
 	_AND, // &
 	_ANDAND, // &&

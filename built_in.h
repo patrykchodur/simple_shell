@@ -5,5 +5,7 @@ int built_in_cd(const char* argv[]);
 
 int built_in_exit(const char* argv[]);
 
+int built_in_set(const char* argv[]);
+
 
 #endif

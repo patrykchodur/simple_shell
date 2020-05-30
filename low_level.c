@@ -16,11 +16,13 @@ int max_fork_count = 100;
 const char* built_in_names[] = {
 	"cd",
 	"exit",
+	"set",
 };
 
 int (*built_in_functions[])(const char(*)[]) = {
 	built_in_cd,
 	built_in_exit,
+	built_in_set,
 };
 
 int execute(const char* path, char* argv[]) {
@@ -75,4 +77,13 @@ const char* get_hd(void) {
 
 const char* get_login(void) {
 	return getpwuid(getuid())->pw_name;
+}
+
+const char* get_env(const char* name) {
+	return getenv(name);
+}
+
+int set_env(const char* name, const char* value) {
+	return setenv(name, value, 1);
+
 }

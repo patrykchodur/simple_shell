@@ -86,6 +86,8 @@ const std::string& Parser::current_text() {
 void Parser::root() {
 	next_token();
 	while (!m_error) {
+		if (ask(_EOF))
+			break;
 		pipeline();
 		if (accept(_SEPARATOR)) {
 			execute_to_run();
@@ -104,8 +106,6 @@ void Parser::root() {
 			if (last_return_value() == 0)
 				break;
 		}
-		if (ask(_EOF))
-			break;
 	}
 	execute_to_run();
 }
@@ -120,12 +120,24 @@ void Parser::pipeline_separator() {
 
 void Parser::command() {
 	Program result;
-	while (ask({_ARGUMENT, _OUT_REDIRECTION, _APPEND_REDIRECTION, _IN_REDIRECTION, _FILDES})) {
+	while (ask({_VARIABLE, _ARGUMENT, _OUT_REDIRECTION, _APPEND_REDIRECTION, _IN_REDIRECTION, _FILDES})) {
 		if (accept(_ARGUMENT)) {
 			if (result.m_name.empty())
 				result.m_name = current_text();
 			else {
 				result.m_args.emplace_back(current_text());
+			}
+			continue;
+		}
+		else if (accept(_VARIABLE)) {
+			if (result.m_name.empty()) {
+				auto tmp = get_env(current_text().c_str());
+				if (tmp)
+					result.m_name = tmp;
+			} else {
+				auto tmp = get_env(current_text().c_str());
+				if (tmp)
+					result.m_args.emplace_back(tmp);
 			}
 			continue;
 		}
@@ -142,7 +154,6 @@ void Parser::main_loop() {
 	if (m_interactive) {
 		while (!m_finish) {
 			if (m_error) {
-				std::cout << '\n';
 				m_error = false;
 			}
 			print_prompt();

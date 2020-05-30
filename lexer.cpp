@@ -28,6 +28,7 @@ bool Lexer::is_identifier_char(int c) {
 	case '.':
 	case '/':
 	case '~':
+	case '=':
 		return true;
 	}
 
@@ -129,6 +130,15 @@ std::pair<Token, std::string> Lexer::lex() {
 		m_was_redirection = false;
 		return lex();
 
+	case '$':
+	{
+		std::string result;
+		while (is_identifier_char(character = get_char()))
+			result += character;
+		unget_char(character);
+		LEX_RETURN(_VARIABLE, result);
+	}
+
 	case '>':
 	{
 		auto tmp = get_char();
@@ -148,7 +158,7 @@ std::pair<Token, std::string> Lexer::lex() {
 	{
 		auto tmp = character;
 		std::string result;
-		result += tmp;
+		// result += tmp;
 		while ((character = get_char()) != tmp)
 			result += character;
 		LEX_RETURN(_ARGUMENT, result);
