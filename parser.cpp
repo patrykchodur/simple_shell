@@ -236,7 +236,7 @@ void Parser::print_prompt() {
 		working_directory = '~' + working_directory;
 	}
 
-	std::cout << user_name << ':' << working_directory << "$ ";
+	std::cout << user_name << ':' << "\033[1;34m" <<  working_directory << "\033[0m" << "$ ";
 }
 
 void Parser::execute_to_run() {
