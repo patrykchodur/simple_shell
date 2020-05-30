@@ -25,31 +25,63 @@ int (*built_in_functions[])(const char(*)[]) = {
 	built_in_set,
 };
 
+static int child_pipe[2];
+
 int execute(const char* path, char* argv[]) {
 	assert(--max_fork_count > 0);
 
 	for (int iter = 0; iter < sizeof(built_in_names) / sizeof(built_in_names[0]); ++iter) {
-		if (!strcmp(built_in_names[iter], path))
-			return built_in_functions[iter](argv);
+		if (!strcmp(built_in_names[iter], path)) {
+			int result = built_in_functions[iter](argv);
+			char result_buf[20];
+			sprintf(result_buf, "%d", result);
+			set_env("?", result_buf);
+			return 0;
+		}
 	}
 	int pid = fork();
 	if (pid == 0) {
+		if (child_pipe[0]) {
+			dup2(child_pipe[0], 0);
+		}
+		if (child_pipe[1]) {
+			dup2(child_pipe[1], 1);
+		}
 		execvp(path, argv);
 		fprintf(stderr, "Error: program %s not found\n", path);
 		exit(-1);
 	}
 	else if (pid > 0) {
+		if (child_pipe[0]) {
+			close(child_pipe[0]);
+		}
+		if (child_pipe[1]) {
+			close(child_pipe[1]);
+		}
 		return pid;
 	}
 	else {
 		fprintf(stderr, "Error: fork unsuccessfull\n");
 	}
 }
+void set_pipe_for_child(int arg[2]) {
+	child_pipe[0] = arg[0];
+	child_pipe[1] = arg[1];
+}
 
 int wait_for_process(int pid) {
 	int result;
 	waitpid(pid, &result, 0);
-	return WEXITSTATUS(result);
+	result = WEXITSTATUS(result);
+
+	char result_buf[20];
+	sprintf(result_buf, "%d", result);
+	set_env("?", result_buf);
+	return result;
+}
+
+void open_pipe(int arg[2]) {
+	pipe(arg);
 }
 
 static char* wd_path;

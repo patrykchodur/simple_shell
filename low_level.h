@@ -6,8 +6,11 @@ extern "C" {
 #endif
 
 int execute(const char* path, char* argv[]);
+void set_pipe_for_child(int arg[2]);
 
 int wait_for_process(int pid);
+
+void open_pipe(int arg[2]);
 
 const char* get_wd(void);
 const char* get_hd(void);

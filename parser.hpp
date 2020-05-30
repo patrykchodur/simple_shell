@@ -66,6 +66,7 @@ private:
 	void command();
 	void redirection();
 
+	void skip_to_separator();
 	int last_return_value();
 	void execute_to_run();
 	void print_prompt();

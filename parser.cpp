@@ -98,13 +98,17 @@ void Parser::root() {
 		}
 		if (accept(_ANDAND)) {
 			execute_to_run();
-			if (last_return_value() != 0)
+			if (last_return_value() != 0) {
+				skip_to_separator();
 				break;
+			}
 		}
 		if (accept(_OROR)) {
 			execute_to_run();
-			if (last_return_value() == 0)
+			if (last_return_value() == 0) {
+				skip_to_separator();
 				break;
+			}
 		}
 	}
 	execute_to_run();
@@ -112,6 +116,12 @@ void Parser::root() {
 
 void Parser::pipeline() {
 	command();
+	while (accept(_PIPE)) {
+		if (m_error)
+			return;
+		m_programs_to_run.back().m_pipe = true;
+		command();
+	}
 }
 
 void Parser::pipeline_separator() {
@@ -185,19 +195,43 @@ void Parser::execute_to_run() {
 		m_programs_to_run.clear();
 		return;
 	}
+	int pipes[2] = {0, 0};
+	int pipe_for_child[2] = {0, 0};
 	for (auto&& iter : m_programs_to_run) {
 		auto args = iter.get_argv();
+		if (iter.m_pipe) {
+			open_pipe(pipes);
+			pipe_for_child[1] = pipes[1];
+		}
+		else {
+			pipe_for_child[1] = 0;
+		}
+		set_pipe_for_child(pipe_for_child);
 		iter.m_pid = execute(iter.m_name.c_str(), args.get());
+
+		if (iter.m_pipe) {
+			pipe_for_child[0] = pipes[0];
+		}
+		else {
+			pipe_for_child[0] = 0;
+		}
 	}
 
-	for (auto&& iter : m_programs_to_run)
-		m_last_return_value = wait_for_process(iter.m_pid);
+	for (auto&& iter : m_programs_to_run) {
+		if (iter.m_pid > 0)
+			m_last_return_value = wait_for_process(iter.m_pid);
+	}
 
 	m_programs_to_run.clear();
 }
 
+void Parser::skip_to_separator() {
+	while (current_token() != _SEPARATOR && current_token() != _EOF)
+		next_token();
+}
+
 int Parser::last_return_value() {
-	return m_last_return_value;
+	return std::stoi(get_env("?"));
 }
 
 

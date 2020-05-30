@@ -8,12 +8,38 @@
 
 #include <cstring>
 
+struct Fdredirection {
+	Fdredirection() {
+		from = 0;
+		to = 0;
+	}
+	int from;
+	int to;
+};
+
+struct Nfredirection {
+	Nfredirection() {
+		from = 0;
+		append = false;
+	}
+	int from;
+	std::string to;
+	bool append;
+};
+
 struct Program {
 	std::string m_name;
 	std::vector<std::string> m_args;
-	std::tuple<int, int> m_fildes;
-	std::tuple<std::string, int, bool> m_fildes_to_be_opened;
+	std::vector<Fdredirection> m_fd;
+	std::vector<Nfredirection> m_nf;
+
+	bool m_pipe;
 	int m_pid;
+
+	Program() {
+		m_pid = 0;
+		m_pipe = false;
+	}
 
 	auto get_argv() {
 		auto deleter = [](char** args) {

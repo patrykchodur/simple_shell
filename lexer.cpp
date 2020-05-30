@@ -29,6 +29,7 @@ bool Lexer::is_identifier_char(int c) {
 	case '/':
 	case '~':
 	case '=':
+	case '?':
 		return true;
 	}
 
