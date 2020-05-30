@@ -11,8 +11,21 @@ int built_in_cd(const char* argv[]) {
 	int result;
 	if (!argv[1])
 		result = chdir(get_hd());
-	else
+	else if (argv[1][0] == '~') {
+		const char* home = get_hd();
+
+		int tmp_size = strlen(argv[1]);
+		tmp_size += strlen(home);
+
+		char* path = malloc(tmp_size * sizeof(char));
+
+		strcpy(stpcpy(path, home), argv[1] + 1);
+		result = chdir(path);
+		free(path);
+	}
+	else {
 		result = chdir(argv[1]);
+	}
 	if (result)
 		fprintf(stderr, "Error: directory %s not found\n", argv[1]);
 	else
