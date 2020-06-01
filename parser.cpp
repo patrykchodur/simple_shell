@@ -2,6 +2,7 @@
 #include "low_level.h"
 #include <iostream>
 #include <fstream>
+#include <cassert>
 
 Parser::Parser(int argc, const char* const argv[]) :
 		m_lex(argc == 1),
